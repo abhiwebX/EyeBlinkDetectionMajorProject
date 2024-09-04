@@ -27,9 +27,17 @@ while True:
             x = int( l.x * frame_w)
             y = int (l.y * frame_h)
             cv2.circle(frame,(x,y),3,(0,255,255))
+        
         if(left[0].y-left[1].y) < 0.004:
             print('Eye Is blinked')
+          
             pyi.click()
+            pyi.sleep(1)
+
+
+        if(left[0].y-left[1].y) < 0.000:
+            print('Eye Is closed')
+            print('..........................')
             pyi.sleep(1)
             
 
