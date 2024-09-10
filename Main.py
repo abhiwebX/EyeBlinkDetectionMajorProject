@@ -50,7 +50,7 @@ while True:
   
       
 
-    cv2.imshow("Eye Controlled Mouse",frame)
+    cv2.imshow("Eye blink based SoFtware",frame)
         
     if(righteyecount == 1 and leftEyecount == 1):
         print("eye is blinked both eyes are blinked")
