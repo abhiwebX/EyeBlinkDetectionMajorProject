@@ -1,4 +1,3 @@
-
 import numpy as np
 import cv2
 import mediapipe as mp
@@ -7,7 +6,7 @@ import time
 
 # Initialize camera and keyboard layout
 cam = cv2.VideoCapture(0)
-keyboard = np.zeros((800, 1200, 3), np.uint8)
+keyboard = np.zeros((800, 1370, 3), np.uint8)
 
 # Dataset for letters
 dataset = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F", 6: "G", 7: "H", 8: "I", 9: "P", 10: "K", 11: "L", 12: "M"}
@@ -49,6 +48,7 @@ def letter(letter_index, tt, LetterL):
 # Eye blink detection variables
 Kframes = 0
 Kindex = 0
+label_text = f"Event Name: {dataset[Kindex]}"  # Initialize the label with the first box
 
 # Main loop
 while True:
@@ -89,11 +89,15 @@ while True:
     # Eye blink patterns
     if righteyecount == 1 and leftEyecount == 1:
         print("Double blink pattern detected")
+        # Add functionality for double blink here
     elif righteyecount == 1 and leftEyecount == 0:
         print("Right blink detected (box changing)")
-        Kframes += 1  # Move selection to next box
+        # Move selection to next box
+        Kframes += 1  
     elif leftEyecount == 1 and righteyecount == 0:
-        print("Left blink detected (selection)")
+        print("Event Blink")
+        # Update the label text with the current box name on event blink
+        label_text = f"Event Name: {dataset[Kindex]}"  # Update label text
 
     # Display selected character in the keyboard
     if Kframes == 8:
@@ -110,17 +114,19 @@ while True:
             light = False
         letter(i, dataset[i], light)
 
-    # Resize and insert the camera frame into the bottom-left corner of the keyboard
+    # Resize and insert the camera frame into the top-right corner of the keyboard
     resized_frame = cv2.resize(frame, (300, 200))  # Resize webcam frame
-    keyboard[600:800, 0:300] = resized_frame  # Place webcam frame in bottom-left corner
+    keyboard[0:200, 1070:1370] = resized_frame  # Place webcam frame in top-right corner with margin
+    
+    # Display the label below the camera frame
+    cv2.putText(keyboard, label_text, (1080, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
     # Display the keyboard and the frame
     cv2.imshow("Virtual Keyboard", keyboard)
-  #  cv2.imshow("Eye Blink Detection", frame)
 
-    # Exit on pressing the Escape key
+    # Exit on pressing the Escape key or 'q' key
     key = cv2.waitKey(1)
-    if key == 27:
+    if key == 27 or key == ord('q'):
         break
 
 # Release resources
