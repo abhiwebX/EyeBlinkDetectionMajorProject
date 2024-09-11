@@ -1,0 +1,451 @@
+
+import numpy as np
+import cv2
+import mediapipe as mp
+import pyautogui as pyi
+import time
+
+
+cam = cv2.VideoCapture(0)
+keyboard = np.zeros((800,1200,3),np.uint8)
+
+dataset = {0:"A",1:"B",2:"C",3:"D",4:"E",5:"f",6:"g",7:"h",8:"i",9:"p",10:"k",11:"l",12:"m"}
+
+face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
+screen_w , screen_h = pyi.size()
+
+
+##.................. keyboard code.................
+
+def letter(letter_index,tt,LetterL):
+    
+    if letter_index == 0:
+        x = 0
+        y = 0
+    elif letter_index == 1:
+        x = 200
+        y = 0
+    elif letter_index == 2:
+        x = 400
+        y = 0
+    elif letter_index == 3:
+        x = 600
+        y = 0
+    elif letter_index == 4:
+        x = 800
+        y = 0
+    elif letter_index == 5:
+        x = 0
+        y = 200
+    elif letter_index == 6:
+        x = 200
+        y = 200
+    elif letter_index == 7:
+        x = 400
+        y = 200
+    elif letter_index == 8:
+        x = 600
+        y = 200
+    elif letter_index == 9:
+        x = 800
+        y = 200
+    elif letter_index == 10:
+        x = 0
+        y = 400
+    elif letter_index == 11:
+        x = 200
+        y = 400
+    elif letter_index == 12:
+        x = 400
+        y = 400
+    
+    
+    width = 100
+    height = 100
+    border = 2
+    if LetterL == True:
+        cv2.rectangle(keyboard,(x+border,y+border),( x + width-border,y + height-border),(255,255,255),-1)
+    else:
+        cv2.rectangle(keyboard,(x+border,y+border),( x + width-border,y + height-border),(255,0,0),border)
+
+    ## text setting
+    font_letter = cv2.FONT_HERSHEY_PLAIN
+    text = tt
+    font_scale = 7
+    font_th = 2
+    text_size = cv2.getTextSize(text,font_letter,font_scale,font_th)[0]
+    width_text , height_text = text_size[0],text_size[1]
+    text_x = int((width - width_text)/2)+x
+    text_y = int((height + height_text)/2)+y
+    cv2.putText(keyboard,text,(text_x,text_y),font_letter,font_scale,(0,255,0),font_th)
+    
+
+
+
+#############......................... eye blink program....................
+
+#Counter
+Kframes = 0
+Kindex = 0
+
+while True:
+    _, frame = cam.read()
+    keyboard[:] = (0,0,0)
+    frame = cv2.flip(frame,1)
+    rgb_face = cv2.cvtColor(frame,cv2.COLOR_HSV2BGR)
+    output = face_mesh.process(rgb_face)
+    lankmarks = output.multi_face_landmarks
+    frame_h, frame_w, _ = frame.shape
+    leftEyecount = 0
+    righteyecount = 0
+    if lankmarks:
+        lank = lankmarks[0].landmark
+        for id,l in enumerate(lank[474:478]):
+            x = int( l.x * frame_w)
+            y = int (l.y * frame_h)
+        ##    cv2.circle(frame,(x,y),3,(0,255,0))
+
+        right = [lank[374],lank[385]]
+        for l in right:
+             x = int( l.x * frame_w)
+             y = int (l.y * frame_h)
+             cv2.circle(frame,(x,y),3,(0,255,255))
+
+        if(right[0].y-right[1].y) < 0.005:
+            righteyecount = 1      
+           
+     
+            
+      
+        left = [lank[145],lank[159]]
+        for l in left:
+            x = int( l.x * frame_w)
+            y = int (l.y * frame_h)
+            cv2.circle(frame,(x,y),3,(0,255,255))
+
+            
+        if(left[0].y-left[1].y) < 0.005:
+            leftEyecount = 1
+            
+            
+  
+    if(righteyecount == 1 and leftEyecount == 1):
+        print("Single blink pattern")
+        ## not fully working 
+        
+        
+    elif(righteyecount == 1 and leftEyecount == 0):
+        print(" Event blink pattern")
+        Kframes +=1
+        ## box changing blink ...... when rightEye is blink and left eye is not
+
+
+    elif(leftEyecount == 1 and righteyecount==0):
+        print("Single blink")
+        ## event performing blink when left eye is blink and right eye is open 
+        
+    ### displaying the character in keyboard
+
+    ## frame
+    if Kframes == 8:
+        Kindex +=1
+        Kframes = 0
+    if Kindex == 13:
+        Kindex = 0
+
+    
+    for i in range(13):
+        if i == Kindex:
+          light = True
+        else:
+          light = False
+        letter(i,dataset[i],light)
+
+
+
+    cv2.imshow("MY keyboard",keyboard)
+    cv2.imshow("Eye Blink SoFtware",frame)
+        
+   
+
+    key = cv2.waitKey(1)
+    if key == 27:
+        break
+
+
+time.sleep(2)    
+cam.release()
+cv2.destroyAllWindows()
+
+
+
+
+
+..................... cam integrated code ..............................
+import numpy as np
+import cv2
+import mediapipe as mp
+import pyautogui as pyi
+import time
+
+# Initialize camera and keyboard layout
+cam = cv2.VideoCapture(0)
+keyboard = np.zeros((800, 1200, 3), np.uint8)
+
+# Dataset for letters
+dataset = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F", 6: "G", 7: "H", 8: "I", 9: "P", 10: "K", 11: "L", 12: "M"}
+
+# Mediapipe FaceMesh
+face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
+screen_w, screen_h = pyi.size()
+
+# Keyboard display function
+def letter(letter_index, tt, LetterL):
+    # Dynamically calculate x and y positions based on index
+    row = letter_index // 5  # 5 letters per row
+    col = letter_index % 5   # Modulus to get column
+    
+    x = col * 200  # 200 pixels between each letter horizontally
+    y = row * 200  # 200 pixels between each letter vertically
+    
+    width = 100
+    height = 100
+    border = 2
+    
+    # Draw rectangle (filled if it's the active letter)
+    if LetterL:
+        cv2.rectangle(keyboard, (x + border, y + border), (x + width - border, y + height - border), (255, 255, 255), -1)
+    else:
+        cv2.rectangle(keyboard, (x + border, y + border), (x + width - border, y + height - border), (255, 0, 0), border)
+    
+    # Text settings
+    font_letter = cv2.FONT_HERSHEY_PLAIN
+    text = tt
+    font_scale = 7
+    font_th = 2
+    text_size = cv2.getTextSize(text, font_letter, font_scale, font_th)[0]
+    width_text, height_text = text_size[0], text_size[1]
+    text_x = int((width - width_text) / 2) + x
+    text_y = int((height + height_text) / 2) + y
+    cv2.putText(keyboard, text, (text_x, text_y), font_letter, font_scale, (0, 255, 0), font_th)
+
+# Eye blink detection variables
+Kframes = 0
+Kindex = 0
+
+# Main loop
+while True:
+    _, frame = cam.read()
+    keyboard[:] = (0, 0, 0)  # Reset keyboard display
+    frame = cv2.flip(frame, 1)  # Flip for a mirror effect
+    rgb_face = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
+    output = face_mesh.process(rgb_face)
+    landmarks = output.multi_face_landmarks
+    frame_h, frame_w, _ = frame.shape
+    
+    leftEyecount = 0
+    righteyecount = 0
+    
+    if landmarks:
+        lank = landmarks[0].landmark
+        
+        # Right eye detection
+        right = [lank[374], lank[385]]
+        for l in right:
+            x = int(l.x * frame_w)
+            y = int(l.y * frame_h)
+            cv2.circle(frame, (x, y), 3, (0, 255, 255))
+
+        if (right[0].y - right[1].y) < 0.005:
+            righteyecount = 1  # Right eye is blinked
+        
+        # Left eye detection
+        left = [lank[145], lank[159]]
+        for l in left:
+            x = int(l.x * frame_w)
+            y = int(l.y * frame_h)
+            cv2.circle(frame, (x, y), 3, (0, 255, 255))
+
+        if (left[0].y - left[1].y) < 0.005:
+            leftEyecount = 1  # Left eye is blinked
+
+    # Eye blink patterns
+    if righteyecount == 1 and leftEyecount == 1:
+        print("Double blink pattern detected")
+    elif righteyecount == 1 and leftEyecount == 0:
+        print("Right blink detected (box changing)")
+        Kframes += 1  # Move selection to next box
+    elif leftEyecount == 1 and righteyecount == 0:
+        print("Left blink detected (selection)")
+
+    # Display selected character in the keyboard
+    if Kframes == 8:
+        Kindex += 1
+        Kframes = 0
+    if Kindex == 13:
+        Kindex = 0
+
+    # Draw keyboard and highlight selected box
+    for i in range(13):
+        if i == Kindex:
+            light = True
+        else:
+            light = False
+        letter(i, dataset[i], light)
+
+    # Resize and insert the camera frame into the bottom-left corner of the keyboard
+    resized_frame = cv2.resize(frame, (300, 200))  # Resize webcam frame
+    keyboard[600:800, 0:300] = resized_frame  # Place webcam frame in bottom-left corner
+
+    # Display the keyboard and the frame
+ #   cv2.imshow("Virtual Keyboard", keyboard)
+    cv2.imshow("Eye Blink Detection", frame)
+
+    # Exit on pressing the Escape key
+    key = cv2.waitKey(1)
+    if key == 27:
+        break
+
+# Release resources
+time.sleep(2)
+cam.release()
+cv2.destroyAllWindows()
+
+
+
+#---------------- one of best------------------import numpy as np
+import cv2
+import mediapipe as mp
+import pyautogui as pyi
+import time
+
+# Initialize camera and keyboard layout
+cam = cv2.VideoCapture(0)
+keyboard = np.zeros((800, 1370, 3), np.uint8)
+
+# Dataset for letters
+dataset = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F", 6: "G", 7: "H", 8: "I", 9: "P", 10: "K", 11: "L", 12: "M"}
+
+# Mediapipe FaceMesh
+face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
+screen_w, screen_h = pyi.size()
+
+# Keyboard display function
+def letter(letter_index, tt, LetterL):
+    # Dynamically calculate x and y positions based on index
+    row = letter_index // 5  # 5 letters per row
+    col = letter_index % 5   # Modulus to get column
+    
+    x = col * 200  # 200 pixels between each letter horizontally
+    y = row * 200  # 200 pixels between each letter vertically
+    
+    width = 100
+    height = 100
+    border = 2
+    
+    # Draw rectangle (filled if it's the active letter)
+    if LetterL:
+        cv2.rectangle(keyboard, (x + border, y + border), (x + width - border, y + height - border), (255, 255, 255), -1)
+    else:
+        cv2.rectangle(keyboard, (x + border, y + border), (x + width - border, y + height - border), (255, 0, 0), border)
+    
+    # Text settings
+    font_letter = cv2.FONT_HERSHEY_PLAIN
+    text = tt
+    font_scale = 7
+    font_th = 2
+    text_size = cv2.getTextSize(text, font_letter, font_scale, font_th)[0]
+    width_text, height_text = text_size[0], text_size[1]
+    text_x = int((width - width_text) / 2) + x
+    text_y = int((height + height_text) / 2) + y
+    cv2.putText(keyboard, text, (text_x, text_y), font_letter, font_scale, (0, 255, 0), font_th)
+
+# Eye blink detection variables
+Kframes = 0
+Kindex = 0
+
+# Main loop
+while True:
+    _, frame = cam.read()
+    keyboard[:] = (0, 0, 0)  # Reset keyboard display
+    frame = cv2.flip(frame, 1)  # Flip for a mirror effect
+    rgb_face = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
+    output = face_mesh.process(rgb_face)
+    landmarks = output.multi_face_landmarks
+    frame_h, frame_w, _ = frame.shape
+    
+    leftEyecount = 0
+    righteyecount = 0
+    
+    if landmarks:
+        lank = landmarks[0].landmark
+        
+        # Right eye detection
+        right = [lank[374], lank[385]]
+        for l in right:
+            x = int(l.x * frame_w)
+            y = int(l.y * frame_h)
+            cv2.circle(frame, (x, y), 3, (0, 255, 255))
+
+        if (right[0].y - right[1].y) < 0.005:
+            righteyecount = 1  # Right eye is blinked
+        
+        # Left eye detection
+        left = [lank[145], lank[159]]
+        for l in left:
+            x = int(l.x * frame_w)
+            y = int(l.y * frame_h)
+            cv2.circle(frame, (x, y), 3, (0, 255, 255))
+
+        if (left[0].y - left[1].y) < 0.005:
+            leftEyecount = 1  # Left eye is blinked
+
+    # Eye blink patterns
+    if righteyecount == 1 and leftEyecount == 1:
+        print("Double blink pattern detected")
+        # Add functionality for double blink here
+    elif righteyecount == 1 and leftEyecount == 0:
+        print("Right blink detected (box changing)")
+        # Move selection to next box
+        Kframes += 1  
+    elif leftEyecount == 1 and righteyecount == 0:
+        print("Left blink detected (selection)")
+        # Display selected box name as a header
+        cv2.putText(keyboard, f"Selected: {dataset[Kindex]}", (50, 50), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 5)
+
+    # Update selected character
+    if Kframes == 8:
+        Kindex += 1
+        Kframes = 0
+    if Kindex == 13:
+        Kindex = 0
+
+    # Draw keyboard and highlight selected box
+    for i in range(13):
+        if i == Kindex:
+            light = True
+        else:
+            light = False
+        letter(i, dataset[i], light)
+
+    # Resize and insert the camera frame into the top-right corner of the keyboard
+    resized_frame = cv2.resize(frame, (300, 200))  # Resize webcam frame
+    keyboard[0:200, 1070:1370] = resized_frame  # Place webcam frame in top-right corner with margin
+
+    # Add the current name label at the bottom of the camera frame
+    name_label_position = (1070, 220)  # Adjust position to fit below the camera frame
+    name_label_text = f"Current: {dataset[Kindex]}"
+    cv2.putText(keyboard, name_label_text, name_label_position, cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 3)
+
+    # Display the keyboard and the frame
+    cv2.imshow("Virtual Keyboard", keyboard)
+
+    # Exit on pressing the Escape key or 'q' key
+    key = cv2.waitKey(1)
+    if key == 27 or key == ord('q'):
+        break
+
+# Release resources
+time.sleep(2)
+cam.release()
+cv2.destroyAllWindows()
